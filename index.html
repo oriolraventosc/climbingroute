@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Climbing Wall Route Creator</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #fileInput {
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            border: 2px solid #333;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #shareButton {
+            width: 40px;
+            height: 40px;
+            background-color: #4CAF50;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #shareButton:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="file" id="fileInput" accept="image/*" onchange="handleFile()">
+    <canvas id="climbingCanvas" width="800" height="600"></canvas>
+    <button onclick="nextMovement()">Next Movement</button>
+    <button onclick="createRandomRoute()">Create Random Route</button>
+    <div id="shareButton" onclick="shareImage()">Share</div>
+
+    <script>
+        let img;
+        let climbingHoldsByLine = [];
+        let currentLine = [];
+
+        function handleFile() {
+            const fileInput = document.getElementById('fileInput');
+            const canvas = document.getElementById('climbingCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                img = new Image();
+                img.onload = function () {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                }
+                img.src = e.target.result;
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function markClimbingHold(event) {
+            const canvas = document.getElementById('climbingCanvas');
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            currentLine.push({ x, y });
+
+            const ctx = canvas.getContext('2d');
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function nextMovement() {
+            climbingHoldsByLine.push([...currentLine]);
+            currentLine = [];
+        }
+
+        function createRandomRoute() {
+            const canvas = document.getElementById('climbingCanvas');
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Display holds from each horizontal line (even if less than 2)
+            climbingHoldsByLine.forEach(movementHolds => {
+                if (movementHolds.length > 0) {
+                    const lineHolds = movementHolds;
+
+                    // Shuffle holds randomly
+                    for (let i = lineHolds.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [lineHolds[i], lineHolds[j]] = [lineHolds[j], lineHolds[i]];
+                    }
+
+                    // Draw the route lines for the first 2 holds
+                    if (lineHolds.length >= 2) {
+                        ctx.beginPath();
+                        ctx.moveTo(lineHolds[0].x, lineHolds[0].y);
+                        ctx.lineTo(lineHolds[1].x, lineHolds[1].y);
+                        ctx.strokeStyle = 'blue';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+
+                    // Display and fill only the first 2 holds
+                    lineHolds.slice(0, 2).forEach((hold, index) => {
+                        ctx.beginPath();
+                        ctx.arc(hold.x, hold.y, 5, 0, 2 * Math.PI);
+                        ctx.fillStyle = 'green';
+                        ctx.fill();
+                        ctx.stroke();
+                    });
+                }
+            });
+
+            // Display holds from the last line
+            if (currentLine.length > 0) {
+                const lineHolds = currentLine;
+
+                // Shuffle holds randomly
+                for (let i = lineHolds.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [lineHolds[i], lineHolds[j]] = [lineHolds[j], lineHolds[i]];
+                }
+
+                // Draw the route lines for the first 2 holds
+                if (lineHolds.length >= 2) {
+                    ctx.beginPath();
+                    ctx.moveTo(lineHolds[0].x, lineHolds[0].y);
+                    ctx.lineTo(lineHolds[1].x, lineHolds[1].y);
+                    ctx.strokeStyle = 'blue';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Display and fill only the first 2 holds
+                lineHolds.slice(0, 2).forEach((hold, index) => {
+                    ctx.beginPath();
+                    ctx.arc(hold.x, hold.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = 'green';
+                    ctx.fill();
+                    ctx.stroke();
+                });
+            }
+        }
+
+        function shareImage() {
+            const canvas = document.getElementById('climbingCanvas');
+            const dataUrl = canvas.toDataURL('image/png');
+            const shareUrl = encodeURIComponent(dataUrl);
+
+            // Replace 'YOUR_IMAGE_URL' with the actual URL of your image
+            const whatsappLink = `whatsapp://send?text=Check%20out%20my%20climbing%20wall%20route&image=${shareUrl}`;
+
+            // Open a new window to share on social media
+            window.open(whatsappLink, '_blank');
+        }
+
+        const canvas = document.getElementById('climbingCanvas');
+        canvas.addEventListener('click', markClimbingHold);
+    </script>
+</body>
+
+</html>
